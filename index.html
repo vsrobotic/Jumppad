@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Jump Pad Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        .bg-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .floating-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 0 20px;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #FFD700, #FF6B6B, #4ECDC4);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: pulse 2s ease-in-out infinite, gradient 3s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 0.5s forwards;
+        }
+
+        .game-preview {
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 30%, #98FB98 70%, #90EE90 100%);
+            border-radius: 20px;
+            border: 3px solid #333;
+            margin: 30px auto;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 1s forwards;
+        }
+
+        .preview-ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #FF8A8A, #FF6B6B, #E85555);
+            border-radius: 50%;
+            animation: bounce 2s ease-in-out infinite;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .preview-platform {
+            position: absolute;
+            height: 10px;
+            border-radius: 5px;
+            animation: platformFloat 3s ease-in-out infinite;
+        }
+
+        .preview-platform:nth-child(2) {
+            width: 60px;
+            background: linear-gradient(to bottom, #6B8E23, #556B2F);
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .preview-platform:nth-child(3) {
+            width: 50px;
+            background: linear-gradient(to bottom, #87CEEB, #4169E1);
+            bottom: 80px;
+            left: 20%;
+            animation-delay: 1s;
+            box-shadow: 0 0 10px rgba(65,105,225,0.5);
+        }
+
+        .preview-platform:nth-child(4) {
+            width: 55px;
+            background: linear-gradient(to bottom, #FFD700, #FFA500);
+            bottom: 140px;
+            right: 20%;
+            animation-delay: 2s;
+            box-shadow: 0 0 8px rgba(255,215,0,0.5);
+        }
+
+        @keyframes bounce {
+            0% { bottom: 40px; left: 50%; transform: translateX(-50%) scale(1); }
+            25% { bottom: 100px; left: 30%; transform: translateX(-50%) scale(0.9, 1.1); }
+            50% { bottom: 160px; left: 70%; transform: translateX(-50%) scale(1.1, 0.9); }
+            75% { bottom: 100px; left: 30%; transform: translateX(-50%) scale(0.95, 1.05); }
+            100% { bottom: 40px; left: 50%; transform: translateX(-50%) scale(1); }
+        }
+
+        @keyframes platformFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .menu-buttons {
+            margin-top: 40px;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 1.5s forwards;
+        }
+
+        .menu-button {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 15px auto;
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .menu-button:hover::before {
+            left: 100%;
+        }
+
+        .menu-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .menu-button.primary {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .menu-button.primary:hover {
+            background: linear-gradient(45deg, #FF5252, #26C6DA);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .button-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .controls-hint {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 2s forwards;
+        }
+
+        /* Enhanced stats display */
+        .stats-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-size: 12px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+            opacity: 0;
+            animation: fadeInUp 1s ease-out 2.5s forwards;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .achievement-notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: transform 0.5s ease;
+            z-index: 1000;
+        }
+
+        .achievement-notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .game-preview {
+                width: 280px;
+                height: 180px;
+            }
+            
+            .menu-button {
+                font-size: 1rem;
+                padding: 12px 25px;
+            }
+
+            .stats-bar {
+                position: static;
+                transform: none;
+                margin: 20px auto;
+                max-width: 280px;
+            }
+        }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 10% auto;
+            padding: 30px;
+            border: none;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: white;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: -10px;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        .setting-item {
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .setting-toggle {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .setting-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .setting-toggle.active {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+        }
+
+        .skins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .skin-option {
+            cursor: pointer;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .skin-option:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.05);
+        }
+
+        .skin-option.selected {
+            border-color: #FFD700;
+            background: rgba(255,215,0,0.2);
+            box-shadow: 0 0 15px rgba(255,215,0,0.5);
+        }
+
+        .skin-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .skin-option:hover .skin-preview {
+            transform: rotate(360deg);
+        }
+
+        .skin-option span {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Progress indicators */
+        .progress-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Achievement display */
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .achievement-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .achievement-item.unlocked {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            box-shadow: 0 5px 15px rgba(255,215,0,0.3);
+        }
+
+        .achievement-item.unlocked:hover {
+            transform: scale(1.05);
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .achievement-name {
+            font-size: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="bg-elements" id="bgElements"></div>
+
+    <!-- Achievement notification -->
+    <div class="achievement-notification" id="achievementNotification">
+        <div class="achievement-icon">🏆</div>
+        <div>Achievement Unlocked!</div>
+        <div id="achievementText">First Jump!</div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span>🏆</span>
+            <span id="totalAchievements">0/25</span>
+        </div>
+        <div class="stat-item">
+            <span>📈</span>
+            <span id="bestHeight">0m</span>
+        </div>
+        <div class="stat-item">
+            <span>🎯</span>
+            <span id="totalScore">0</span>
+        </div>
+        <div class="stat-item">
+            <span>🎮</span>
+            <span id="gamesPlayed">0</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="logo">🚀 JUMP PAD</h1>
+        <p class="subtitle">Jump higher, score more, never stop!</p>
+        
+        <div class="game-preview">
+            <div class="preview-ball"></div>
+            <div class="preview-platform"></div>
+            <div class="preview-platform"></div>
+            <div class="preview-platform"></div>
+        </div>
+
+        <div class="menu-buttons">
+            <a href="hoppespill.html" class="menu-button primary">
+                <span class="button-icon">🎮</span>
+                START GAME
+            </a>
+            
+            <button class="menu-button" onclick="openSettings()">
+                <span class="button-icon">⚙️</span>
+                SETTINGS
+            </button>
+            
+            <button class="menu-button" onclick="showSkins()">
+                <span class="button-icon">🎨</span>
+                BALL SKINS
+            </button>
+            
+            <button class="menu-button" onclick="showAchievements()">
+                <span class="button-icon">🏆</span>
+                ACHIEVEMENTS
+            </button>
+            
+            <button class="menu-button" onclick="showStats()">
+                <span class="button-icon">📊</span>
+                STATISTICS
+            </button>
+            
+            <button class="menu-button" onclick="showAbout()">
+                <span class="button-icon">ℹ️</span>
+                ABOUT
+            </button>
+        </div>
+
+        <div class="controls-hint">
+            Use arrow keys or touch screen sides to control
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>⚙️ Settings</h2>
+            <div class="setting-item">
+                <span>Sound Effects</span>
+                <button class="setting-toggle active" id="soundToggle" onclick="toggleSound()">ON</button>
+            </div>
+            <div class="setting-item">
+                <span>Background Music</span>
+                <button class="setting-toggle active" id="musicToggle" onclick="toggleMusic()">ON</button>
+            </div>
+            <div class="setting-item">
+                <span>Vibration</span>
+                <button class="setting-toggle active" id="vibrationToggle" onclick="toggleVibration()">ON</button>
+            </div>
+            <div class="setting-item">
+                <span>Particle Effects</span>
+                <button class="setting-toggle active" id="particlesToggle" onclick="toggleParticles()">ON</button>
+            </div>
+            <div class="setting-item">
+                <span>Difficulty</span>
+                <button class="setting-toggle" id="difficultyToggle" onclick="toggleDifficulty()">NORMAL</button>
+            </div>
+            <div class="setting-item">
+                <span>Auto-Jump Help</span>
+                <button class="setting-toggle" id="autoJumpToggle" onclick="toggleAutoJump()">OFF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skins Modal -->
+    <div id="skinsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>🎨 Ball Skins</h2>
+            <p style="margin-bottom: 20px;">Choose your ball design:</p>
+            <div class="skins-grid">
+                <div class="skin-option" data-skin="default" onclick="selectSkin('default')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #FF8A8A, #FF6B6B, #E85555);"></div>
+                    <span>Default</span>
+                </div>
+                <div class="skin-option" data-skin="blue" onclick="selectSkin('blue')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #8AB4FF, #6B9BFF, #5585E8);"></div>
+                    <span>Ocean</span>
+                </div>
+                <div class="skin-option" data-skin="green" onclick="selectSkin('green')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #8AFF8A, #6BFF6B, #55E855);"></div>
+                    <span>Forest</span>
+                </div>
+                <div class="skin-option" data-skin="purple" onclick="selectSkin('purple')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #D18AFF, #C16BFF, #B055E8);"></div>
+                    <span>Magic</span>
+                </div>
+                <div class="skin-option" data-skin="gold" onclick="selectSkin('gold')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #FFD700, #FFC107, #FFB300);"></div>
+                    <span>Golden</span>
+                </div>
+                <div class="skin-option" data-skin="rainbow" onclick="selectSkin('rainbow')">
+                    <div class="skin-preview" style="background: conic-gradient(from 0deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff0080, #ff0000);"></div>
+                    <span>Rainbow</span>
+                </div>
+                <div class="skin-option" data-skin="fire" data-unlock="height-200" onclick="selectSkin('fire')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #FF4500, #FF6347, #DC143C);"></div>
+                    <span>Fire</span>
+                    <div style="font-size: 10px; color: #FFD700;">Unlock at 200m</div>
+                </div>
+                <div class="skin-option" data-skin="ice" data-unlock="height-400" onclick="selectSkin('ice')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #E0FFFF, #B0E0E6, #87CEEB);"></div>
+                    <span>Ice</span>
+                    <div style="font-size: 10px; color: #FFD700;">Unlock at 400m</div>
+                </div>
+                <div class="skin-option" data-skin="galaxy" data-unlock="height-600" onclick="selectSkin('galaxy')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #4B0082, #8A2BE2, #9400D3);"></div>
+                    <span>Galaxy</span>
+                    <div style="font-size: 10px; color: #FFD700;">Unlock at 600m</div>
+                </div>
+                <div class="skin-option" data-skin="neon" data-unlock="achievement-speedster" onclick="selectSkin('neon')">
+                    <div class="skin-preview" style="background: radial-gradient(circle at 30% 30%, #00FF00, #32CD32, #00CED1); box-shadow: 0 0 10px #00FF00;"></div>
+                    <span>Neon</span>
+                    <div style="font-size: 10px; color: #FFD700;">Achievement Unlock</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements Modal -->
+    <div id="achievementsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>🏆 Achievements</h2>
+            <div class="achievement-grid" id="achievementGrid">
+                <!-- Achievements will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Modal -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>📊 Your Statistics</h2>
+            <div class="progress-section">
+                <h3>🎯 Best Performance</h3>
+                <div>Highest Reached: <span id="statBestHeight">0m</span></div>
+                <div>Best Score: <span id="statBestScore">0</span></div>
+                <div>Longest Streak: <span id="statLongestStreak">0</span></div>
+            </div>
+            <div class="progress-section">
+                <h3>📈 Progress</h3>
+                <div>Games Played: <span id="statGamesPlayed">0</span></div>
+                <div>Total Jumps: <span id="statTotalJumps">0</span></div>
+                <div>Perfect Landings: <span id="statPerfectLandings">0</span></div>
+            </div>
+            <div class="progress-section">
+                <h3>🏆 Collection</h3>
+                <div>Skins Unlocked: <span id="statSkinsUnlocked">3/10</span></div>
+                <div>Achievements: <span id="statAchievements">0/25</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="achievementProgress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>ℹ️ About Jump Pad</h2>
+            <p style="line-height: 1.6; margin: 20px 0;">
+                <strong>Jump Pad v2.0</strong><br><br>
+                A challenging endless platform jumper where you must stay above the rising world!<br><br>
+                🌟 Features:<br>
+                • Dynamic nature backgrounds<br>
+                • 10+ unique ball skins<br>
+                • 25 achievements to unlock<br>
+                • Progressive difficulty<br>
+                • Particle effects & animations<br><br>
+                Created with HTML5 Canvas and JavaScript<br><br>
+                <em>Jump higher, score more, never stop!</em>
+            </p>
+            <div style="margin-top: 20px;">
+                <button class="setting-toggle" onclick="showCredits()">Show Credits</button>
+                <button class="setting-toggle" onclick="resetProgress()">Reset Progress</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced settings state with more options
+        let settings = {
+            sound: true,
+            music: true,
+            vibration: true,
+            particles: true,
+            difficulty: 'normal',
+            autoJump: false
+        };
+
+        // Achievement system
+        const ACHIEVEMENTS = {
+            'first-jump': { name: 'First Steps', description: 'Make your first jump', icon: '🥇', unlocked: false },
+            'height-50': { name: 'Getting High', description: 'Reach 50m height', icon: '🏔️', unlocked: false },
+            'height-100': { name: 'Sky Walker', description: 'Reach 100m height', icon: '☁️', unlocked: false },
+            'height-200': { name: 'Above the Clouds', description: 'Reach 200m height', icon: '🌤️', unlocked: false },
+            'height-400': { name: 'Stratosphere', description: 'Reach 400m height', icon: '🛩️', unlocked: false },
+            'height-600': { name: 'Space Explorer', description: 'Reach 600m height', icon: '🚀', unlocked: false },
+            'height-1000': { name: 'Cosmic Traveler', description: 'Reach 1000m height', icon: '🌌', unlocked: false },
+            'score-500': { name: 'Point Collector', description: 'Score 500 points', icon: '💯', unlocked: false },
+            'score-1000': { name: 'Score Master', description: 'Score 1000 points', icon: '🎯', unlocked: false },
+            'games-10': { name: 'Persistent', description: 'Play 10 games', icon: '🎮', unlocked: false },
+            'games-50': { name: 'Dedicated', description: 'Play 50 games', icon: '🏆', unlocked: false },
+            'perfect-10': { name: 'Precision', description: '10 perfect landings', icon: '🎪', unlocked: false },
+            'speedster': { name: 'Speedster', description: 'Reach max speed', icon: '⚡', unlocked: false },
+            'survivor': { name: 'Survivor', description: 'Survive 5 minutes', icon: '⏰', unlocked: false },
+            'skin-collector': { name: 'Fashionista', description: 'Unlock 5 skins', icon: '👑', unlocked: false }
+        };
+
+        // Statistics tracking
+        let gameStats = {
+            bestHeight: 0,
+            bestScore: 0,
+            gamesPlayed: 0,
+            totalJumps: 0,
+            perfectLandings: 0,
+            longestStreak: 0,
+            totalPlayTime: 0,
+            skinsUnlocked: 3,
+            achievementsUnlocked: 0
+        };
+
+        // Load saved data
+        function loadSavedData() {
+            const savedSettings = localStorage.getItem('bounceballSettings');
+            if (savedSettings) {
+                settings = {...settings, ...JSON.parse(savedSettings)};
+            }
+
+            const savedStats = localStorage.getItem('bounceballStats');
+            if (savedStats) {
+                gameStats = {...gameStats, ...JSON.parse(savedStats)};
+            }
+
+            const savedAchievements = localStorage.getItem('bounceballAchievements');
+            if (savedAchievements) {
+                const achievements = JSON.parse(savedAchievements);
+                Object.keys(achievements).forEach(key => {
+                    if (ACHIEVEMENTS[key]) {
+                        ACHIEVEMENTS[key].unlocked = achievements[key];
+                    }
+                });
+            }
+
+            updateUI();
+            updateSettingsDisplay();
+        }
+
+        // Save data
+        function saveData() {
+            localStorage.setItem('bounceballSettings', JSON.stringify(settings));
+            localStorage.setItem('bounceballStats', JSON.stringify(gameStats));
+            
+            const achievementStates = {};
+            Object.keys(ACHIEVEMENTS).forEach(key => {
+                achievementStates[key] = ACHIEVEMENTS[key].unlocked;
+            });
+            localStorage.setItem('bounceballAchievements', JSON.stringify(achievementStates));
+        }
+
+        // Update UI with current stats
+        function updateUI() {
+            const unlockedCount = Object.values(ACHIEVEMENTS).filter(a => a.unlocked).length;
+            document.getElementById('totalAchievements').textContent = `${unlockedCount}/15`;
+            document.getElementById('bestHeight').textContent = `${gameStats.bestHeight}m`;
+            document.getElementById('totalScore').textContent = gameStats.bestScore;
+            document.getElementById('gamesPlayed').textContent = gameStats.gamesPlayed;
+        }
+
+        // Create floating background particles
+        function createBackgroundParticles() {
+            const container = document.getElementById('bgElements');
+            const particleCount = 20;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'floating-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (4 + Math.random() * 4) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Modal functions
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function showSkins() {
+            document.getElementById('skinsModal').style.display = 'block';
+            loadSelectedSkin();
+            updateSkinAvailability();
+        }
+
+        function showAchievements() {
+            document.getElementById('achievementsModal').style.display = 'block';
+            populateAchievements();
+        }
+
+        function showStats() {
+            document.getElementById('statsModal').style.display = 'block';
+            updateStatsDisplay();
+        }
+
+        function showAbout() {
+            document.getElementById('aboutModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+
+        // Settings functions
+        function toggleSound() {
+            settings.sound = !settings.sound;
+            updateSettingsDisplay();
+            saveData();
+        }
+
+        function toggleMusic() {
+            settings.music = !settings.music;
+            updateSettingsDisplay();
+            saveData();
+        }
+
+        function toggleVibration() {
+            settings.vibration = !settings.vibration;
+            updateSettingsDisplay();
+            saveData();
+        }
+
+        function toggleParticles() {
+            settings.particles = !settings.particles;
+            updateSettingsDisplay();
+            saveData();
+        }
+
+        function toggleDifficulty() {
+            const difficulties = ['EASY', 'NORMAL', 'HARD', 'EXTREME'];
+            const current = document.getElementById('difficultyToggle').textContent;
+            const currentIndex = difficulties.indexOf(current);
+            const nextIndex = (currentIndex + 1) % difficulties.length;
+            settings.difficulty = difficulties[nextIndex].toLowerCase();
+            updateSettingsDisplay();
+            saveData();
+        }
+
+        function toggleAutoJump() {
+            settings.autoJump = !settings.autoJump;
+            updateSettingsDisplay();
+            saveData();
+        }
+
+        function updateSettingsDisplay() {
+            document.getElementById('soundToggle').textContent = settings.sound ? 'ON' : 'OFF';
+            document.getElementById('soundToggle').classList.toggle('active', settings.sound);
+            
+            document.getElementById('musicToggle').textContent = settings.music ? 'ON' : 'OFF';
+            document.getElementById('musicToggle').classList.toggle('active', settings.music);
+            
+            document.getElementById('vibrationToggle').textContent = settings.vibration ? 'ON' : 'OFF';
+            document.getElementById('vibrationToggle').classList.toggle('active', settings.vibration);
+            
+            document.getElementById('particlesToggle').textContent = settings.particles ? 'ON' : 'OFF';
+            document.getElementById('particlesToggle').classList.toggle('active', settings.particles);
+            
+            document.getElementById('difficultyToggle').textContent = settings.difficulty.toUpperCase();
+            
+            document.getElementById('autoJumpToggle').textContent = settings.autoJump ? 'ON' : 'OFF';
+            document.getElementById('autoJumpToggle').classList.toggle('active', settings.autoJump);
+        }
+
+        // Skin system
+        function selectSkin(skinName) {
+            // Check if skin is unlocked
+            const skinElement = document.querySelector(`[data-skin="${skinName}"]`);
+            const unlockRequirement = skinElement?.dataset.unlock;
+            
+            if (unlockRequirement && !isSkinUnlocked(skinName)) {
+                showAchievementNotification('🔒 Skin Locked!', 'Complete the requirement to unlock this skin');
+                return;
+            }
+            
+            localStorage.setItem('selectedSkin', skinName);
+            loadSelectedSkin();
+            showAchievementNotification('🎨 Skin Selected!', `Now using ${skinName} ball`);
+        }
+
+        function isSkinUnlocked(skinName) {
+            const basicSkins = ['default', 'blue', 'green', 'purple', 'gold', 'rainbow'];
+            if (basicSkins.includes(skinName)) return true;
+            
+            const skinElement = document.querySelector(`[data-skin="${skinName}"]`);
+            const unlockRequirement = skinElement?.dataset.unlock;
+            
+            if (!unlockRequirement) return true;
+            
+            if (unlockRequirement.startsWith('height-')) {
+                const requiredHeight = parseInt(unlockRequirement.split('-')[1]);
+                return gameStats.bestHeight >= requiredHeight;
+            }
+            
+            if (unlockRequirement.startsWith('achievement-')) {
+                const achievementName = unlockRequirement.split('-')[1];
+                return ACHIEVEMENTS[achievementName]?.unlocked || false;
+            }
+            
+            return false;
+        }
+
+        function updateSkinAvailability() {
+            document.querySelectorAll('.skin-option').forEach(option => {
+                const skinName = option.dataset.skin;
+                const isUnlocked = isSkinUnlocked(skinName);
+                
+                option.style.opacity = isUnlocked ? '1' : '0.5';
+                option.style.pointerEvents = isUnlocked ? 'auto' : 'none';
+                
+                if (!isUnlocked) {
+                    option.style.filter = 'grayscale(100%)';
+                }
+            });
+        }
+
+        function loadSelectedSkin() {
+            const selectedSkin = localStorage.getItem('selectedSkin') || 'default';
+            
+            document.querySelectorAll('.skin-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            const selectedOption = document.querySelector(`[data-skin="${selectedSkin}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+            }
+        }
+
+        // Achievement system
+        function checkAchievement(achievementId) {
+            if (ACHIEVEMENTS[achievementId] && !ACHIEVEMENTS[achievementId].unlocked) {
+                ACHIEVEMENTS[achievementId].unlocked = true;
+                gameStats.achievementsUnlocked++;
+                showAchievementNotification('🏆 Achievement Unlocked!', ACHIEVEMENTS[achievementId].name);
+                saveData();
+                updateUI();
+                return true;
+            }
+            return false;
+        }
+
+        function showAchievementNotification(title, text) {
+            const notification = document.getElementById('achievementNotification');
+            document.getElementById('achievementText').textContent = text;
+            notification.classList.add('show');
+            
+            if (settings.vibration && navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function populateAchievements() {
+            const grid = document.getElementById('achievementGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(ACHIEVEMENTS).forEach(key => {
+                const achievement = ACHIEVEMENTS[key];
+                const div = document.createElement('div');
+                div.className = `achievement-item ${achievement.unlocked ? 'unlocked' : ''}`;
+                div.innerHTML = `
+                    <div class="achievement-icon">${achievement.icon}</div>
+                    <div class="achievement-name">${achievement.name}</div>
+                    <div style="font-size: 9px; margin-top: 5px;">${achievement.description}</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('statBestHeight').textContent = `${gameStats.bestHeight}m`;
+            document.getElementById('statBestScore').textContent = gameStats.bestScore;
+            document.getElementById('statLongestStreak').textContent = gameStats.longestStreak;
+            document.getElementById('statGamesPlayed').textContent = gameStats.gamesPlayed;
+            document.getElementById('statTotalJumps').textContent = gameStats.totalJumps;
+            document.getElementById('statPerfectLandings').textContent = gameStats.perfectLandings;
+            document.getElementById('statSkinsUnlocked').textContent = `${gameStats.skinsUnlocked}/10`;
+            document.getElementById('statAchievements').textContent = `${gameStats.achievementsUnlocked}/15`;
+            
+            const achievementProgress = (gameStats.achievementsUnlocked / 15) * 100;
+            document.getElementById('achievementProgress').style.width = `${achievementProgress}%`;
+        }
+
+        // Utility functions
+        function showCredits() {
+            alert('Created with ❤️ using HTML5 Canvas\nSpecial thanks to the JavaScript community!');
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone!')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.location.href = 'hoppespill.html';
+            }
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Add button hover effects
+        document.querySelectorAll('.menu-button').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                if (settings.sound) {
+                    // Could add hover sound here
+                }
+            });
+        });
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            createBackgroundParticles();
+            loadSavedData();
+            updateUI();
+            
+            // Simulate some achievements for demo
+            setTimeout(() => {
+                if (gameStats.gamesPlayed === 0) {
+                    showAchievementNotification('👋 Welcome!', 'Ready to start jumping?');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2543 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jump Pad - Enhanced Edition</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            background: #000;
+        }
+        
+        canvas {
+            display: block;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        .ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ui div {
+            margin: 3px 0;
+            font-size: 12px;
+        }
+        
+        .top-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 0 2px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(0,0,0,0.9);
+            transform: scale(1.05);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px 4px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.3);
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76,175,80,0.4);
+        }
+        
+        .restart-btn.secondary {
+            background: linear-gradient(45deg, #666, #555);
+            box-shadow: 0 4px 15px rgba(102,102,102,0.3);
+        }
+        
+        .restart-btn.secondary:hover {
+            box-shadow: 0 6px 20px rgba(102,102,102,0.4);
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 10px;
+            max-width: 140px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+        
+        .legend-color {
+            width: 14px;
+            height: 10px;
+            margin-right: 8px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+
+
+
+
+        /* Touch position indicator */
+        .touch-position {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -50%);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+        }
+
+        /* Pause overlay */
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 99;
+            backdrop-filter: blur(5px);
+        }
+
+        .pause-content {
+            text-align: center;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* Achievement notification */
+        .achievement-popup {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(255,215,0,0.3);
+            z-index: 150;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .achievement-popup.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Progress indicators */
+        .height-milestone {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,215,0,0.9);
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 12px;
+            z-index: 50;
+            animation: milestoneFloat 2s ease-out;
+        }
+
+        @keyframes milestoneFloat {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.5); }
+            50% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.1); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(1); }
+        }
+
+        /* Loading screen */
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                border: none;
+                border-radius: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+            
+            canvas {
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+            
+            .legend {
+                bottom: 80px;
+                right: 5px;
+                max-width: 120px;
+                font-size: 9px;
+            }
+            
+            .ui {
+                top: 5px;
+                left: 5px;
+                padding: 8px;
+            }
+        }
+        
+        @keyframes milestone-popup {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Loading screen -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loading-text">🚀 Loading Jump Pad...</div>
+            <div class="loading-bar">
+                <div class="loading-progress" id="loadingProgress"></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="360" height="640"></canvas>
+        
+        <!-- UI Elements -->
+        <div class="ui">
+            <div>🎯 Score: <span id="score">0</span></div>
+            <div>📏 Height: <span id="height">0</span>m</div>
+            <div>🏆 Level: <span id="level">1</span></div>
+            <div>⚡ Speed: <span id="speed">0.5</span>x</div>
+            <div>🏅 Streak: <span id="streak">0</span></div>
+        </div>
+
+        <div class="top-controls">
+            <button class="control-btn" onclick="backToMenu()">🏠 Menu</button>
+            <button class="control-btn" onclick="toggleFullscreen()">📲 Full</button>
+            <button class="control-btn" onclick="pauseGame()">⏸️ Pause</button>
+        </div>
+        
+        <!-- Enhanced Legend -->
+        <div class="legend">
+            <div style="text-align: center; margin-bottom: 8px; font-weight: bold;">Platform Types</div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(to bottom, #6B8E23, #556B2F);"></div>
+                Normal
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(to bottom, #87CEEB, #4169E1); box-shadow: 0 0 5px #4169E1;"></div>
+                Super Jump
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(to bottom, #DEB887, #D2691E);"></div>
+                Fragile
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(to bottom, #FFD700, #FFA500); box-shadow: 0 0 5px #FFD700;"></div>
+                Moving
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(to bottom, #FF4444, #CC0000);"></div>
+                Dangerous!
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(to bottom, #DA70D6, #BA55D3); box-shadow: 0 0 5px #DA70D6;"></div>
+                Boost
+            </div>
+        </div>
+        
+        <!-- Touch Indicators -->
+        <!-- Touch Position Indicator -->
+        <div class="touch-position" id="touchPosition"></div>
+        
+        <!-- Pause Overlay -->
+        <div class="pause-overlay" id="pauseOverlay">
+            <div class="pause-content">
+                <h2>⏸️ Game Paused</h2>
+                <p>Tap anywhere or press P to continue</p>
+                <button class="restart-btn" onclick="pauseGame()">▶️ Resume</button>
+                <button class="restart-btn secondary" onclick="backToMenu()">🏠 Menu</button>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div class="game-over" id="gameOver">
+            <h2>🎮 Game Over!</h2>
+            <div id="gameOverStats" style="margin: 20px 0;">
+                <p><strong>🎯 Final Score:</strong> <span id="finalScore">0</span></p>
+                <p><strong>📏 Max Height:</strong> <span id="finalHeight">0</span>m</p>
+                <p><strong>🏅 Best Streak:</strong> <span id="finalStreak">0</span></p>
+                <p><strong>⏱️ Survival Time:</strong> <span id="survivalTime">0</span>s</p>
+            </div>
+            <div id="newRecord" style="color: #FFD700; display: none; margin: 15px 0;">
+                🏆 NEW HIGH SCORE! 🏆
+            </div>
+            <div id="achievementEarned" style="color: #4ECDC4; display: none; margin: 15px 0;">
+                🏅 Achievement Unlocked! 🏅
+            </div>
+            <p>Try again to beat your record!</p>
+            <button class="restart-btn" onclick="restartGame()">🔄 Play Again</button>
+            <button class="restart-btn secondary" onclick="backToMenu()">🏠 Back to Menu</button>
+        </div>
+
+        <!-- Achievement Popup -->
+        <div class="achievement-popup" id="achievementPopup">
+            <div id="achievementText">Achievement Unlocked!</div>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration and state
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Enhanced settings from localStorage
+        const gameSettings = JSON.parse(localStorage.getItem('bounceballSettings') || '{"sound":true,"music":true,"vibration":true,"particles":true,"difficulty":"normal","autoJump":true}');
+        const selectedSkin = localStorage.getItem('selectedSkin') || 'default';
+        
+        // Enhanced ball skin system with special effects
+        const BALL_SKINS = {
+            default: {
+                gradient: ['#FF8A8A', '#FF6B6B', '#E85555'],
+                stroke: '#CC4444',
+                glow: false
+            },
+            blue: {
+                gradient: ['#8AB4FF', '#6B9BFF', '#5585E8'],
+                stroke: '#4466CC',
+                glow: false
+            },
+            green: {
+                gradient: ['#8AFF8A', '#6BFF6B', '#55E855'],
+                stroke: '#44CC44',
+                glow: false
+            },
+            purple: {
+                gradient: ['#D18AFF', '#C16BFF', '#B055E8'],
+                stroke: '#9944CC',
+                glow: false
+            },
+            gold: {
+                gradient: ['#FFD700', '#FFC107', '#FFB300'],
+                stroke: '#CC9900',
+                glow: true,
+                glowColor: '#FFD700'
+            },
+            rainbow: {
+                gradient: ['#FF0080', '#8000FF', '#0080FF'],
+                stroke: '#FF0080',
+                special: 'rainbow'
+            },
+            fire: {
+                gradient: ['#FF4500', '#FF6347', '#DC143C'],
+                stroke: '#CC3333',
+                special: 'fire',
+                trail: 'fire',
+                glow: true,
+                glowColor: '#FF4500'
+            },
+            ice: {
+                gradient: ['#E0FFFF', '#B0E0E6', '#87CEEB'],
+                stroke: '#6699BB',
+                special: 'ice',
+                trail: 'ice'
+            },
+            galaxy: {
+                gradient: ['#4B0082', '#8A2BE2', '#9400D3'],
+                stroke: '#330055',
+                special: 'galaxy',
+                trail: 'galaxy',
+                glow: true,
+                glowColor: '#8A2BE2'
+            },
+            neon: {
+                gradient: ['#00FF00', '#32CD32', '#00CED1'],
+                stroke: '#00AA00',
+                special: 'neon',
+                glow: true,
+                glowColor: '#00FF00'
+            }
+        };
+        
+        // Game state variables
+        let gameRunning = true;
+        let gamePaused = false;
+        let gameStartTime = Date.now();
+        let camera = { y: 0 };
+        let worldSpeed = 1.0; // Base speed for rising lava effect
+        let baseWorldSpeed = 1.0;
+        let risingLavaY = canvas.height; // Start lava at bottom of screen initially
+        
+        // Apply difficulty settings
+        let gravity = gameSettings.difficulty === 'easy' ? 0.5 : 
+                     gameSettings.difficulty === 'hard' ? 0.8 : 
+                     gameSettings.difficulty === 'extreme' ? 1.0 : 0.6;
+        
+        // Enhanced player object with more properties
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 125, // Positioned safely above the ground platform
+            width: 20,
+            height: 20,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 5,
+            jumpPower: 12,
+            onGround: false, // Let physics handle initial ground contact
+            lastJumpTime: 0,
+            lastGroundTime: 0,
+            lastJumpInput: 0,
+            jumpCooldown: 100, // Reduced cooldown for better feel
+            boostEndTime: 0,
+            jumpBoostEndTime: 0,
+            boostJumpPower: 0,
+            originalSpeed: 5,
+            perfectLandings: 0,
+            currentStreak: 0,
+            rotation: 0,
+            squashScale: { x: 1, y: 1 }
+        };
+        
+        // Game variables
+        let score = 0;
+        let platforms = [];
+        let level = 1;
+        let jumpPowerIncrease = 0;
+        let highestReached = 0;
+        let gameStarted = false;
+        let particles = [];
+        let landingParticles = [];
+        let environmentParticles = [];
+        let shownMilestones = new Set(); // Track which milestones have been shown
+        
+        // Performance tracking
+        let lastFrameTime = Date.now();
+        let fps = 60;
+        
+        // Enhanced platform types with more variety
+        const PLATFORM_TYPES = {
+            NORMAL: { 
+                color: '#4CAF50', 
+                points: 1,
+                material: 'wood',
+                sound: 'bounce'
+            },
+            SUPER: { 
+                color: '#2196F3', 
+                points: 2, 
+                jumpBoost: 8,
+                material: 'crystal',
+                sound: 'superJump',
+                glow: true
+            },
+            FRAGILE: { 
+                color: '#FF9800', 
+                points: 1, 
+                fragile: true,
+                material: 'stone',
+                sound: 'crack'
+            },
+            MOVING: { 
+                color: '#FFEB3B', 
+                points: 2, 
+                moving: true,
+                material: 'gold',
+                sound: 'metallic',
+                glow: true
+            },
+            DANGEROUS: { 
+                color: '#F44336', 
+                points: 0, 
+                dangerous: true,
+                material: 'lava',
+                sound: 'danger'
+            },
+            BOOST: { 
+                color: '#9C27B0', 
+                points: 3, 
+                speedBoost: true,
+                material: 'energy',
+                sound: 'powerUp',
+                glow: true
+            },
+            JUMP_PAD: {
+                color: '#00BCD4',
+                points: 1,
+                bounceBoost: 15,
+                material: 'rubber',
+                sound: 'bounce'
+            }
+        };
+        
+        // Input handling with enhanced touch support
+        const keys = {};
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let longPressActive = false;
+        let currentTouchX = 0;
+        let touchActive = false;
+        let lastTouchX = 0;
+        let touchMoveThreshold = 10; // Minimum movement to register as drag
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            if (e.key === 'Escape') {
+                backToMenu();
+            }
+            if (e.key === 'p' || e.key === 'P') {
+                pauseGame();
+            }
+            if (e.key === ' ') {
+                e.preventDefault();
+                player.lastJumpInput = Date.now();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Enhanced touch controls with continuous drag support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            touchStartX = touch.clientX - rect.left;
+            touchStartY = touch.clientY - rect.top;
+            touchStartTime = Date.now();
+            currentTouchX = touchStartX;
+            lastTouchX = touchStartX;
+            touchActive = true;
+            longPressActive = false;
+            
+            // Handle paused state
+            if (gamePaused) {
+                pauseGame();
+                return;
+            }
+            
+            // Register jump input for buffering
+            player.lastJumpInput = Date.now();
+            
+            // Show visual feedback for touch area
+            updateTouchIndicators();
+            
+            // Long press detection
+            setTimeout(() => {
+                if (touchStartTime && Date.now() - touchStartTime > 300 && touchActive) {
+                    longPressActive = true;
+                    if (gameSettings.vibration && navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }
+            }, 300);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            
+            if (!touchActive) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            currentTouchX = touch.clientX - rect.left;
+            
+            // Calculate movement direction and speed
+            const deltaX = currentTouchX - lastTouchX;
+            const totalMovement = Math.abs(currentTouchX - touchStartX);
+            
+            // Only apply movement if significant enough
+            if (totalMovement > touchMoveThreshold) {
+                // Convert touch position to movement input
+                const centerX = canvas.width / 2;
+                const touchOffset = currentTouchX - centerX;
+                const maxOffset = canvas.width / 2;
+                
+                // Normalize to -1 to 1 range
+                const normalizedInput = Math.max(-1, Math.min(1, touchOffset / maxOffset));
+                
+                // Apply smooth movement based on touch position
+                if (normalizedInput < -0.1) {
+                    keys['ArrowLeft'] = true;
+                    keys['ArrowRight'] = false;
+                } else if (normalizedInput > 0.1) {
+                    keys['ArrowRight'] = true;
+                    keys['ArrowLeft'] = false;
+                } else {
+                    // Neutral zone - stop movement
+                    keys['ArrowLeft'] = false;
+                    keys['ArrowRight'] = false;
+                }
+                
+                // Update visual indicators
+                updateTouchIndicators();
+            }
+            
+            lastTouchX = currentTouchX;
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touchDuration = Date.now() - touchStartTime;
+            const totalMovement = Math.abs(currentTouchX - touchStartX);
+            
+            // If it was primarily a tap (minimal movement), handle as jump
+            if (totalMovement < touchMoveThreshold) {
+                // Process jump based on touch duration
+                if (touchDuration < 150) {
+                    // Quick tap - normal jump
+                    if (gameSettings.autoJump || canJump()) {
+                        performJump(1.0);
+                    }
+                } else if (touchDuration < 500 && longPressActive) {
+                    // Long press - power jump
+                    performJump(1.3);
+                }
+            }
+            
+            // Clear all touch and movement state
+            touchActive = false;
+            keys['ArrowLeft'] = false;
+            keys['ArrowRight'] = false;
+            touchStartTime = 0;
+            currentTouchX = 0;
+            lastTouchX = 0;
+            
+            // Clear visual indicators
+            document.getElementById('touchPosition').style.display = 'none';
+        });
+        
+        // Function to update touch indicators based on continuous touch movement
+        function updateTouchIndicators() {
+            const touchPositionElement = document.getElementById('touchPosition');
+            
+            if (!touchActive) {
+                touchPositionElement.style.display = 'none';
+                return;
+            }
+            
+            // Show and position the touch indicator
+            touchPositionElement.style.display = 'block';
+            touchPositionElement.style.left = currentTouchX + 'px';
+            touchPositionElement.style.top = touchStartY + 'px';
+        }
+        
+        // Enhanced jump mechanics with coyote time and buffering - unlimited jumps on platforms
+        function canJump() {
+            const currentTime = Date.now();
+            const coyoteTime = 150; // milliseconds after leaving ground
+            const jumpBuffer = 100; // milliseconds before landing
+            
+            const timeSinceGround = currentTime - player.lastGroundTime;
+            const timeSinceJumpInput = currentTime - player.lastJumpInput;
+            
+            // Remove cooldown restriction for unlimited jumping on platforms
+            return (timeSinceGround < coyoteTime || player.onGround) && 
+                   timeSinceJumpInput < jumpBuffer;
+        }
+        
+        function performJump(multiplier = 1.0) {
+            if (!canJump()) return;
+            
+            const currentTime = Date.now();
+            let jumpPower = (player.jumpPower + jumpPowerIncrease + player.boostJumpPower) * multiplier;
+            
+            // Add momentum bonus
+            const horizontalBonus = Math.abs(player.velocityX) * 0.2;
+            jumpPower += horizontalBonus;
+            
+            player.velocityY = -jumpPower;
+            player.lastJumpTime = currentTime;
+            player.onGround = false;
+            
+            // Visual feedback
+            player.squashScale = { x: 1.2, y: 0.8 };
+            
+            // Audio feedback
+            if (gameSettings.sound) {
+                playJumpSound();
+            }
+            
+            // Vibration feedback
+            if (gameSettings.vibration && navigator.vibrate) {
+                navigator.vibrate(30);
+            }
+            
+            // Track statistics
+            updateStats('totalJumps', 1);
+        }
+        
+        // Enhanced platform creation with more variety
+        function createPlatform(x, y, type = 'NORMAL') {
+            const typeData = PLATFORM_TYPES[type];
+            return {
+                x: x,
+                y: y,
+                width: 80 + (type === 'MOVING' ? 20 : 0), // Moving platforms are wider
+                height: 15,
+                type: type,
+                color: typeData.color,
+                points: typeData.points,
+                moveDirection: Math.random() > 0.5 ? 1 : -1,
+                moveSpeed: 1 + Math.random() * 1.5,
+                fragileTimer: 0,
+                lastTouchTime: 0,
+                material: typeData.material,
+                glowPhase: Math.random() * Math.PI * 2,
+                ...typeData
+            };
+        }
+        
+        function initializePlatforms() {
+            platforms = [];
+            
+            // Ground platform
+            const groundPlatform = {
+                x: 0,
+                y: canvas.height - 100,
+                width: canvas.width,
+                height: 20,
+                type: 'GROUND',
+                color: '#228B22',
+                points: 0,
+                material: 'grass',
+                isGround: true
+            };
+            platforms.push(groundPlatform);
+            
+            // Generate initial platforms with smart spacing and horizontal distribution
+            let currentY = canvas.height - 100;
+            let lastX = canvas.width / 2; // Start from center (where ground platform is)
+            
+            for (let i = 1; i < 15; i++) { // Reduced from 25 to 15 platforms
+                // Ensure platforms are spread far apart horizontally
+                let x;
+                let attempts = 0;
+                do {
+                    x = Math.random() * (canvas.width - 160) + 40; // More margin from edges
+                    attempts++;
+                } while (Math.abs(x - lastX) < 200 && attempts < 20); // Much larger horizontal separation (200px)
+                
+                lastX = x;
+                
+                // Safe spacing between platforms - within jump range
+                const baseDistance = 60; // Reduced to be reachable
+                const maxDistance = 85;  // Max 85px (within 120px jump height)
+                const difficultyFactor = Math.min(i / 12, 1); // Adjusted for fewer platforms
+                const distance = baseDistance + (maxDistance - baseDistance) * difficultyFactor * Math.random();
+                
+                currentY -= distance;
+                const type = getPlatformType(i);
+                
+                platforms.push(createPlatform(x, currentY, type));
+            }
+        }
+        
+        function getPlatformType(heightLevel) {
+            const rand = Math.random();
+            const levelFactor = Math.min(level, 15) / 15;
+            
+            if (heightLevel < 3) return 'NORMAL';
+            
+            // Progressive introduction of platform types
+            if (heightLevel > 5 && rand < 0.03 * levelFactor) return 'DANGEROUS';
+            if (heightLevel > 3 && rand < 0.12 * levelFactor) return 'BOOST';
+            if (heightLevel > 2 && rand < 0.18 * levelFactor) return 'SUPER';
+            if (heightLevel > 4 && rand < 0.15 * levelFactor) return 'JUMP_PAD';
+            if (heightLevel > 1 && rand < 0.25 * levelFactor) return 'FRAGILE';
+            if (heightLevel > 2 && rand < 0.20 * levelFactor) return 'MOVING';
+            
+            return 'NORMAL';
+        }
+        
+        function generateNewPlatforms() {
+            // Find the topmost platform
+            let topPlatform = platforms.length > 0 ? 
+                Math.min(...platforms.map(p => p.y)) : 
+                camera.y - canvas.height;
+            
+            let safetyCounter = 0;
+            while (topPlatform > camera.y - canvas.height - 200 && safetyCounter < 15) { // Reduced to spawn fewer platforms
+                // Get the last few platforms to avoid stacking
+                const recentPlatforms = platforms
+                    .filter(p => p.y > topPlatform - 400) // Check larger area for conflicts
+                    .sort((a, b) => a.y - b.y); // Sort by height
+                
+                let x;
+                let attempts = 0;
+                do {
+                    x = Math.random() * (canvas.width - 160) + 40; // More margin from edges
+                    attempts++;
+                    
+                    // Check if this x position conflicts with recent platforms - much stricter
+                    const conflicts = recentPlatforms.some(p => Math.abs(p.x - x) < 250); // Large horizontal separation (250px)
+                    if (!conflicts) break;
+                    
+                } while (attempts < 25); // More attempts to find good spread-out position
+                
+                // Safe spacing within jump range
+                const heightFactor = Math.min(highestReached / 1000, 0.5); // Reduced max factor
+                const baseDistance = 65 + (heightFactor * 10); // Safe base distance
+                const maxDistance = 85 + (heightFactor * 10);  // Max 95px (within jump range)
+                const distance = baseDistance + Math.random() * (maxDistance - baseDistance);
+                
+                const y = topPlatform - distance;
+                const heightLevel = Math.floor((-y) / 150);
+                const type = getPlatformType(heightLevel);
+                
+                platforms.push(createPlatform(x, y, type));
+                topPlatform = y;
+                safetyCounter++;
+            }
+            
+            // Remove platforms that are too far below
+            platforms = platforms.filter(p => p.y < camera.y + canvas.height + 300);
+        }
+        
+        // Enhanced player update with momentum and better physics
+        function updatePlayer() {
+            if (gamePaused) return;
+            
+            const currentTime = Date.now();
+            
+            // Update boost effects
+            if (player.boostEndTime > 0 && currentTime >= player.boostEndTime) {
+                player.speed = player.originalSpeed;
+                jumpPowerIncrease = Math.max(0, jumpPowerIncrease - 1);
+                player.boostEndTime = 0;
+            }
+            
+            if (player.jumpBoostEndTime > 0 && currentTime >= player.jumpBoostEndTime) {
+                player.boostJumpPower = 0;
+                player.jumpBoostEndTime = 0;
+            }
+            
+            // Enhanced movement with momentum
+            const acceleration = 0.8;
+            const friction = 0.85;
+            
+            if (keys['ArrowLeft']) {
+                player.velocityX = Math.max(player.velocityX - acceleration, -player.speed);
+            } else if (keys['ArrowRight']) {
+                player.velocityX = Math.min(player.velocityX + acceleration, player.speed);
+            } else {
+                player.velocityX *= friction;
+            }
+            
+            // Apply gravity
+            player.velocityY += gravity;
+            
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            // Update rotation based on velocity
+            player.rotation += player.velocityX * 0.1;
+            
+            // Update squash and stretch
+            player.squashScale.x = Math.max(0.8, player.squashScale.x * 0.95 + 0.05);
+            player.squashScale.y = Math.min(1.2, player.squashScale.y * 0.95 + 0.05);
+            
+            // Wrap around screen edges
+            if (player.x < -player.width) player.x = canvas.width;
+            if (player.x > canvas.width) player.x = -player.width;
+            
+            // Create trail particles for special skins
+            if (gameSettings.particles) {
+                createBallTrail();
+            }
+            
+            // Check platform collisions
+            if (player.velocityY > 0) {
+                checkPlatformCollisions();
+            }
+            
+            // Update height tracking - each platform represents 2 meters
+            const currentHeight = Math.max(0, Math.floor((canvas.height - 100 - player.y) / 75) * 2);
+            if (currentHeight > highestReached) {
+                highestReached = currentHeight;
+                checkHeightMilestones(currentHeight);
+            }
+            
+            // Game over condition - check if rising lava catches the player (only after 10m)
+            if (highestReached >= 10 && player.y + player.height >= risingLavaY) {
+                gameOver();
+            }
+            
+            // Also check if player falls too far below camera (backup condition)
+            if (player.y > camera.y + canvas.height + 100) {
+                gameOver();
+            }
+        }
+        
+        function checkPlatformCollisions() {
+            const currentTime = Date.now();
+            let wasOnGround = player.onGround;
+            player.onGround = false;
+            
+            // Special handling for ground platform to ensure reliable landing
+            const groundPlatform = platforms.find(p => p.isGround);
+            if (groundPlatform && player.velocityY >= 0) {
+                const groundHorizontalOverlap = player.x < groundPlatform.x + groundPlatform.width &&
+                                              player.x + player.width > groundPlatform.x;
+                const groundAtLevel = player.y + player.height >= groundPlatform.y &&
+                                    player.y + player.height <= groundPlatform.y + groundPlatform.height + 20; // Extra tolerance
+                
+                if (groundHorizontalOverlap && groundAtLevel) {
+                    // Force landing on ground platform
+                    player.y = groundPlatform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                    player.lastGroundTime = currentTime;
+                    
+                    // Auto-jump from ground
+                    const jumpPower = player.jumpPower + jumpPowerIncrease + player.boostJumpPower;
+                    player.velocityY = -jumpPower;
+                    player.lastJumpTime = currentTime;
+                    player.onGround = false;
+                    
+                    // Effects for ground platform
+                    if (gameSettings.particles) {
+                        createLandingEffect(player.x + player.width/2, groundPlatform.y, groundPlatform.type);
+                    }
+                    
+                    if (gameSettings.sound) {
+                        playPlatformSound(groundPlatform.type);
+                    }
+                    
+                    if (gameSettings.vibration && navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                    
+                    return; // Exit early since we handled ground collision
+                }
+            }
+            
+            // Regular platform collision detection
+            for (let platform of platforms) {
+                if (platform.isGround) continue; // Skip ground platform (already handled above)
+                
+                // Enhanced collision detection for unlimited jumping
+                const horizontalOverlap = player.x < platform.x + platform.width &&
+                                        player.x + player.width > platform.x;
+                const verticalOverlap = player.y + player.height > platform.y &&
+                                      player.y < platform.y + platform.height;
+                
+                // Allow collision when player is touching platform (remove restrictive coming from above check)
+                if (horizontalOverlap && verticalOverlap && player.velocityY >= 0) {
+                    // Handle dangerous platforms - they disappear after one use
+                    if (platform.type === 'DANGEROUS') {
+                        // Land on dangerous platform like normal platforms
+                        player.y = platform.y - player.height;
+                        player.velocityY = 0; // Stop falling
+                        player.onGround = true;
+                        player.lastGroundTime = currentTime;
+                        
+                        // Mark platform for removal after landing
+                        platform.width = 0; // Make it disappear immediately
+                        platform.disappearing = true;
+                        
+                        // Continue with normal platform logic but skip most effects
+                        let jumpPower = player.jumpPower + jumpPowerIncrease + player.boostJumpPower;
+                        player.velocityY = -jumpPower;
+                        player.lastJumpTime = currentTime;
+                        player.onGround = false;
+                        
+                        // Landing effects for dangerous platform
+                        if (gameSettings.particles) {
+                            createLandingEffect(player.x + player.width/2, platform.y, platform.type);
+                        }
+                        
+                        if (gameSettings.sound) {
+                            playPlatformSound(platform.type);
+                        }
+                        
+                        if (gameSettings.vibration && navigator.vibrate) {
+                            navigator.vibrate(100); // Stronger vibration for dangerous platform
+                        }
+                        
+                        return; // Exit early since we handled dangerous platform
+                    }
+                    
+                    // Land on safe platform - unlimited jumping allowed
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0; // Stop falling
+                    player.onGround = true;
+                    player.lastGroundTime = currentTime;
+                    
+                    // Calculate jump power with bonuses
+                    let jumpPower = player.jumpPower + jumpPowerIncrease + player.boostJumpPower;
+                    
+                    // Platform-specific effects
+                    if (platform.jumpBoost) {
+                        jumpPower += platform.jumpBoost;
+                    }
+                    
+                    if (platform.bounceBoost) {
+                        jumpPower = platform.bounceBoost;
+                    }
+                    
+                    if (platform.speedBoost) {
+                        jumpPowerIncrease += 1;
+                        player.speed = Math.min(player.speed + 0.5, 8);
+                        player.boostEndTime = currentTime + 4000;
+                        player.jumpBoostEndTime = currentTime + 4000;
+                        player.boostJumpPower = 6;
+                        showAchievementPopup('🚀 Speed Boost!');
+                    }
+                    
+                    // Always auto-jump when landing on platform
+                    player.velocityY = -jumpPower;
+                    player.lastJumpTime = currentTime;
+                    player.onGround = false; // Immediately set to false since we're jumping
+                    
+                    // Perfect landing detection
+                    if (Math.abs(player.x + player.width/2 - (platform.x + platform.width/2)) < 15) {
+                        player.perfectLandings++;
+                        player.currentStreak++;
+                        updateStats('perfectLandings', 1);
+                        showStreakEffect();
+                    } else {
+                        player.currentStreak = 0;
+                    }
+                    
+                    // Landing effects
+                    if (gameSettings.particles) {
+                        createLandingEffect(player.x + player.width/2, platform.y, platform.type);
+                    }
+                    
+                    // Score and sound - no cooldown restrictions
+                    score += platform.points;
+                    
+                    if (gameSettings.sound) {
+                        playPlatformSound(platform.type);
+                    }
+                    
+                    if (gameSettings.vibration && navigator.vibrate) {
+                        navigator.vibrate(platform.glow ? 80 : 50);
+                    }
+                    
+                    // Fragile platform handling
+                    if (platform.fragile) {
+                        platform.fragileTimer = 45;
+                    }
+                    
+                    break;
+                }
+            }
+        }
+        
+        function updatePlatforms() {
+            if (gamePaused) return;
+            
+            for (let i = platforms.length - 1; i >= 0; i--) {
+                const platform = platforms[i];
+                
+                // Remove platforms that have disappeared (dangerous platforms or fragile ones)
+                if (platform.width <= 0 && (platform.disappearing || platform.fragileTimer <= 0)) {
+                    platforms.splice(i, 1);
+                    continue;
+                }
+                
+                // Moving platforms
+                if (platform.moving) {
+                    platform.x += platform.moveDirection * platform.moveSpeed;
+                    
+                    if (platform.x <= 0 || platform.x >= canvas.width - platform.width) {
+                        platform.moveDirection *= -1;
+                    }
+                }
+                
+                // Fragile platforms
+                if (platform.fragile && platform.fragileTimer > 0) {
+                    platform.fragileTimer--;
+                    if (platform.fragileTimer <= 0) {
+                        platform.width = 0; // Make it disappear
+                    }
+                }
+                
+                // Update glow phase for special platforms
+                if (platform.glow) {
+                    platform.glowPhase += 0.1;
+                }
+            }
+        }
+        
+        // Enhanced particle systems
+        function createBallTrail() {
+            const currentSkin = BALL_SKINS[selectedSkin] || BALL_SKINS.default;
+            
+            if (Math.random() < 0.3 && particles.length < 30) {
+                particles.push({
+                    x: player.x + player.width/2 + (Math.random() - 0.5) * 8,
+                    y: player.y + player.height/2 + (Math.random() - 0.5) * 8,
+                    velocityX: (Math.random() - 0.5) * 2,
+                    velocityY: Math.random() * 1 + 0.5,
+                    size: 2 + Math.random() * 3,
+                    life: 1.0,
+                    decay: 0.02,
+                    color: currentSkin.gradient[1],
+                    type: currentSkin.special || 'normal'
+                });
+            }
+        }
+        
+        function createLandingEffect(x, y, platformType) {
+            if (!gameSettings.particles) return;
+            
+            const particleCount = 6 + Math.random() * 6;
+            const colors = {
+                'NORMAL': ['#8FBC8F', '#6B8E23'],
+                'SUPER': ['#87CEEB', '#4169E1'],
+                'FRAGILE': ['#DEB887', '#D2691E'],
+                'MOVING': ['#FFD700', '#FFA500'],
+                'BOOST': ['#DA70D6', '#9C27B0'],
+                'JUMP_PAD': ['#00BCD4', '#0097A7']
+            };
+            
+            const platformColors = colors[platformType] || ['#FFFFFF', '#CCCCCC'];
+            
+            for (let i = 0; i < particleCount; i++) {
+                landingParticles.push({
+                    x: x + (Math.random() - 0.5) * 20,
+                    y: y,
+                    velocityX: (Math.random() - 0.5) * 6,
+                    velocityY: -Math.random() * 4 - 2,
+                    size: 2 + Math.random() * 4,
+                    life: 1.0,
+                    decay: 0.02,
+                    color: platformColors[Math.floor(Math.random() * platformColors.length)],
+                    gravity: 0.15
+                });
+            }
+        }
+        
+        function updateParticles() {
+            if (gamePaused) return;
+            
+            // Update ball trail particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                
+                particle.x += particle.velocityX;
+                particle.y += particle.velocityY;
+                particle.velocityY += 0.1;
+                particle.life -= particle.decay;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Update landing particles
+            for (let i = landingParticles.length - 1; i >= 0; i--) {
+                const particle = landingParticles[i];
+                
+                particle.x += particle.velocityX;
+                particle.y += particle.velocityY;
+                particle.velocityY += particle.gravity;
+                particle.life -= particle.decay;
+                
+                if (particle.life <= 0) {
+                    landingParticles.splice(i, 1);
+                }
+            }
+            
+            // Update environment particles
+            updateEnvironmentParticles();
+        }
+        
+        // Enhanced camera system with smooth following
+        function updateCamera() {
+            if (gamePaused) return;
+            
+            const targetY = player.y - canvas.height * 0.4;
+            const lerpFactor = 0.05;
+            
+            // Smooth camera following
+            camera.y += (targetY - camera.y) * lerpFactor;
+            
+            // Rising lava effect - only start after player reaches 10m height
+            if (gameStarted && highestReached >= 10) {
+                // Update rising lava position - lava rises by decreasing Y value
+                risingLavaY -= worldSpeed;
+                
+                // Ensure lava is always visible at the bottom of the screen
+                const maxLavaDistance = camera.y + canvas.height - 50; // Keep lava max 50px from bottom of screen (closer to bottom)
+                if (risingLavaY > maxLavaDistance) {
+                    risingLavaY = maxLavaDistance; // Force lava to stay near bottom of screen
+                }
+                
+                // Camera follows player but also considers lava position
+                const minCameraY = risingLavaY - canvas.height + 150; // Keep lava near bottom of screen
+                camera.y = Math.min(camera.y, minCameraY);
+                
+                // Ensure camera doesn't move too fast
+                const maxCameraSpeed = worldSpeed * 2;
+                const deltaY = targetY - camera.y;
+                if (Math.abs(deltaY) > maxCameraSpeed) {
+                    camera.y += Math.sign(deltaY) * maxCameraSpeed;
+                }
+            }
+        }
+        
+        function updateGameLogic() {
+            if (gamePaused) return;
+            
+            if (!gameStarted && score > 0) {
+                gameStarted = true;
+                // Keep lava at bottom when game starts, it will rise when player reaches 10m
+            }
+            
+            // Level progression - every 50 meters (25 platforms)
+            const newLevel = Math.floor(highestReached / 50) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                jumpPowerIncrease += 0.1;
+                showLevelUp();
+            }
+            
+            // Rising lava speed increases with level - slow start, gradual increase
+            worldSpeed = baseWorldSpeed + (level - 1) * 0.15; // Increases by 0.15 per level
+            worldSpeed = Math.min(worldSpeed, 4.0); // Cap at reasonable speed
+            
+            // Generate new platforms
+            generateNewPlatforms();
+            
+            // Update streak display
+            document.getElementById('streak').textContent = player.currentStreak;
+        }
+        
+        // Enhanced background system with dynamic nature scenes - changes every 20 platforms (40 meters)
+        function drawDynamicBackground() {
+            const height = Math.max(0, highestReached);
+            
+            // Define transition zones with smooth fading
+            const transitionWidth = 10; // 10 meters transition zone
+            
+            if (height < 40 - transitionWidth) {
+                drawForestLevel();
+            } else if (height < 40 + transitionWidth) {
+                // Transition from Forest to Mountain
+                const fadeAmount = Math.min(1, Math.max(0, (height - (40 - transitionWidth)) / (transitionWidth * 2)));
+                drawForestLevel();
+                ctx.save();
+                ctx.globalAlpha = fadeAmount;
+                drawMountainLevel();
+                ctx.restore();
+            } else if (height < 80 - transitionWidth) {
+                drawMountainLevel();
+            } else if (height < 80 + transitionWidth) {
+                // Transition from Mountain to Cloud
+                const fadeAmount = Math.min(1, Math.max(0, (height - (80 - transitionWidth)) / (transitionWidth * 2)));
+                drawMountainLevel();
+                ctx.save();
+                ctx.globalAlpha = fadeAmount;
+                drawCloudLevel();
+                ctx.restore();
+            } else if (height < 120 - transitionWidth) {
+                drawCloudLevel();
+            } else if (height < 120 + transitionWidth) {
+                // Transition from Cloud to Stratosphere
+                const fadeAmount = Math.min(1, Math.max(0, (height - (120 - transitionWidth)) / (transitionWidth * 2)));
+                drawCloudLevel();
+                ctx.save();
+                ctx.globalAlpha = fadeAmount;
+                drawStratosphereLevel();
+                ctx.restore();
+            } else if (height < 160 - transitionWidth) {
+                drawStratosphereLevel();
+            } else if (height < 160 + transitionWidth) {
+                // Transition from Stratosphere to Space
+                const fadeAmount = Math.min(1, Math.max(0, (height - (160 - transitionWidth)) / (transitionWidth * 2)));
+                drawStratosphereLevel();
+                ctx.save();
+                ctx.globalAlpha = fadeAmount;
+                drawSpaceLevel();
+                ctx.restore();
+            } else {
+                drawSpaceLevel();
+            }
+        }
+        
+        function drawForestLevel() {
+            // Forest gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(0.3, '#9ACD32');
+            gradient.addColorStop(0.7, '#6B8E23');
+            gradient.addColorStop(1, '#228B22');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background trees with parallax
+            drawParallaxTrees();
+            
+            // Add floating leaves
+            if (Math.random() < 0.05 && environmentParticles.length < 15) {
+                environmentParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: -20,
+                    velocityX: (Math.random() - 0.5) * 1,
+                    velocityY: 1 + Math.random() * 2,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.1,
+                    size: 4 + Math.random() * 6,
+                    life: 1.0,
+                    decay: 0.001,
+                    color: `hsl(${60 + Math.random() * 60}, 70%, ${30 + Math.random() * 20}%)`,
+                    type: 'leaf'
+                });
+            }
+        }
+        
+        function drawMountainLevel() {
+            // Mountain gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#B0C4DE');
+            gradient.addColorStop(0.4, '#D2B48C');
+            gradient.addColorStop(0.8, '#8B7355');
+            gradient.addColorStop(1, '#696969');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw mountain silhouettes
+            drawMountainSilhouettes();
+            
+            // Add falling snow at higher altitudes
+            if (Math.random() < 0.08 && environmentParticles.length < 20) {
+                environmentParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: -10,
+                    velocityX: (Math.random() - 0.5) * 0.5,
+                    velocityY: 0.5 + Math.random() * 1.5,
+                    size: 2 + Math.random() * 3,
+                    life: 1.0,
+                    decay: 0.001,
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    type: 'snow'
+                });
+            }
+        }
+        
+        function drawCloudLevel() {
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1E90FF');
+            gradient.addColorStop(0.5, '#87CEEB');
+            gradient.addColorStop(1, '#B0C4DE');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw animated clouds
+            drawAnimatedClouds();
+            
+            // Sun effect
+            drawSun();
+        }
+        
+        function drawStratosphereLevel() {
+            // High atmosphere gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#191970');
+            gradient.addColorStop(0.5, '#4169E1');
+            gradient.addColorStop(1, '#6495ED');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Aurora effect
+            drawAurora();
+        }
+        
+        function drawAurora() {
+            const time = Date.now() / 1000;
+            
+            // Create aurora waves
+            ctx.save();
+            for (let i = 0; i < 3; i++) {
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, `rgba(${100 + i * 50}, ${255 - i * 30}, ${150 + i * 40}, 0.3)`);
+                gradient.addColorStop(0.5, `rgba(${50 + i * 80}, ${200 - i * 20}, ${100 + i * 60}, 0.2)`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                
+                const offset = Math.sin(time * 0.5 + i) * 50;
+                ctx.moveTo(0, 0);
+                
+                for (let x = 0; x <= canvas.width; x += 20) {
+                    const y = 100 + Math.sin((x + offset) * 0.01 + time + i) * 30 + Math.cos((x + offset) * 0.005 + time * 0.7) * 20;
+                    ctx.lineTo(x, y);
+                }
+                
+                ctx.lineTo(canvas.width, 0);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
+        function drawSpaceLevel() {
+            // Space gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#000011');
+            gradient.addColorStop(0.5, '#001122');
+            gradient.addColorStop(1, '#000000');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Twinkling stars
+            drawTwinklingStars();
+            
+            // Distant galaxies
+            drawGalaxies();
+        }
+        
+        // Helper functions for background elements
+        function drawParallaxTrees() {
+            const time = Date.now() / 1000;
+            
+            for (let i = 0; i < 5; i++) {
+                const x = (i * 80 + Math.sin(time * 0.5 + i) * 10) % (canvas.width + 40) - 20;
+                const y = canvas.height - 50 + Math.sin(time * 0.3 + i) * 5;
+                const height = 40 + Math.sin(i) * 20;
+                
+                // Tree trunk
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x - 3, y, 6, height);
+                
+                // Tree crown
+                ctx.fillStyle = '#228B22';
+                ctx.beginPath();
+                ctx.arc(x, y - height/2, 15, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawMountainSilhouettes() {
+            ctx.fillStyle = 'rgba(105, 105, 105, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            
+            for (let x = 0; x <= canvas.width; x += 20) {
+                const y = canvas.height - 100 - Math.sin(x * 0.01) * 80 - Math.cos(x * 0.005) * 40;
+                ctx.lineTo(x, y);
+            }
+            
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawAnimatedClouds() {
+            const time = Date.now() / 1000;
+            
+            for (let i = 0; i < 4; i++) {
+                const x = (i * 100 + time * 10) % (canvas.width + 80) - 40;
+                const y = 50 + i * 30; // Removed vibration: + Math.sin(time + i) * 10
+                
+                drawCloud(x, y, 30 + i * 5);
+            }
+        }
+        
+        function drawCloud(x, y, size) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            
+            // Multiple circles for cloud shape
+            for (let i = 0; i < 5; i++) {
+                const offsetX = (i - 2) * size * 0.3;
+                const offsetY = Math.sin(i) * size * 0.2;
+                const radius = size * (0.5 + (i * 0.1)); // Removed random: + Math.random() * 0.3
+                
+                ctx.beginPath();
+                ctx.arc(x + offsetX, y + offsetY, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawSun() {
+            const x = canvas.width - 80;
+            const y = 80;
+            const time = Date.now() / 1000;
+            
+            // Sun glow
+            const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, 50);
+            glowGradient.addColorStop(0, 'rgba(255, 255, 0, 0.3)');
+            glowGradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, 50, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sun body
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x, y, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sun rays
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI * 2 / 8) + time * 0.5;
+                const startX = x + Math.cos(angle) * 30;
+                const startY = y + Math.sin(angle) * 30;
+                const endX = x + Math.cos(angle) * 45;
+                const endY = y + Math.sin(angle) * 45;
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+        }
+        
+        function drawTwinklingStars() {
+            const time = Date.now() / 1000;
+            
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 137.5) % canvas.width;
+                const y = (i * 197.3) % canvas.height;
+                const twinkle = Math.sin(time * 2 + i) * 0.5 + 0.5;
+                const size = 1 + twinkle * 2;
+                
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + twinkle * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawGalaxies() {
+            const time = Date.now() / 1000;
+            
+            // Draw distant spiral galaxies
+            for (let i = 0; i < 3; i++) {
+                const x = (i * 200 + 100) % canvas.width;
+                const y = (i * 150 + 80) % canvas.height;
+                const rotation = time * 0.1 + i;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rotation);
+                
+                // Galaxy spiral
+                const galaxyGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
+                galaxyGradient.addColorStop(0, 'rgba(200, 150, 255, 0.8)');
+                galaxyGradient.addColorStop(0.5, 'rgba(100, 50, 200, 0.4)');
+                galaxyGradient.addColorStop(1, 'rgba(50, 25, 100, 0.1)');
+                
+                ctx.fillStyle = galaxyGradient;
+                
+                // Draw spiral arms
+                for (let arm = 0; arm < 3; arm++) {
+                    ctx.beginPath();
+                    for (let t = 0; t < Math.PI * 4; t += 0.1) {
+                        const r = t * 3;
+                        const spiralX = Math.cos(t + arm * Math.PI * 2 / 3) * r;
+                        const spiralY = Math.sin(t + arm * Math.PI * 2 / 3) * r * 0.3;
+                        
+                        if (t === 0) {
+                            ctx.moveTo(spiralX, spiralY);
+                        } else {
+                            ctx.lineTo(spiralX, spiralY);
+                        }
+                    }
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = `rgba(200, 150, 255, ${0.3 - arm * 0.1})`;
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        function updateEnvironmentParticles() {
+            if (gamePaused) return;
+            
+            for (let i = environmentParticles.length - 1; i >= 0; i--) {
+                const particle = environmentParticles[i];
+                
+                particle.x += particle.velocityX;
+                particle.y += particle.velocityY;
+                
+                if (particle.rotation !== undefined) {
+                    particle.rotation += particle.rotationSpeed;
+                }
+                
+                particle.life -= particle.decay;
+                
+                if (particle.life <= 0 || particle.y > canvas.height + 50) {
+                    environmentParticles.splice(i, 1);
+                }
+            }
+        }
+        
+        // Enhanced rendering system
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw dynamic background
+            drawDynamicBackground();
+            
+            // Handle pause overlay
+            if (gamePaused) {
+                document.getElementById('pauseOverlay').style.display = 'flex';
+                return;
+            } else {
+                document.getElementById('pauseOverlay').style.display = 'none';
+            }
+            
+            ctx.save();
+            ctx.translate(0, -camera.y);
+            
+            // Draw rising lava first (behind everything)
+            drawRisingLava();
+            
+            // Draw platforms with enhanced graphics
+            drawEnhancedPlatforms();
+            
+            // Draw enhanced player
+            drawEnhancedPlayer();
+            
+            // Draw particles
+            drawParticles();
+            
+            // Draw environment particles
+            drawEnvironmentParticles();
+            
+            ctx.restore();
+            
+            // Update UI
+            updateUI();
+        }
+        
+        function drawRisingLava() {
+            // Only show lava after player reaches 10m height
+            if (!gameStarted || highestReached < 10) return;
+            
+            // Create lava gradient
+            const lavaGradient = ctx.createLinearGradient(0, risingLavaY - 50, 0, risingLavaY + 50);
+            lavaGradient.addColorStop(0, 'rgba(255, 100, 0, 0.3)'); // Transparent orange glow
+            lavaGradient.addColorStop(0.5, 'rgba(255, 50, 0, 0.8)'); // Semi-transparent red
+            lavaGradient.addColorStop(1, 'rgba(200, 0, 0, 1)'); // Solid dark red
+            
+            // Draw the rising lava - fill from lava position to bottom of world
+            ctx.fillStyle = lavaGradient;
+            ctx.fillRect(0, risingLavaY, canvas.width, canvas.height * 2); // Make sure it covers the entire bottom
+            
+            // Add animated lava bubbles effect
+            const time = Date.now() / 1000;
+            for (let i = 0; i < 10; i++) {
+                const x = (i * 40 + Math.sin(time + i) * 20) % canvas.width;
+                const y = risingLavaY - 10 + Math.sin(time * 2 + i) * 5;
+                const size = 3 + Math.sin(time * 3 + i) * 2;
+                
+                ctx.fillStyle = `rgba(255, ${100 + Math.sin(time + i) * 50}, 0, 0.7)`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawEnhancedPlatforms() {
+            for (let platform of platforms) {
+                if (platform.width <= 0) continue;
+                
+                if (platform.isGround) {
+                    drawGroundPlatform(platform);
+                } else {
+                    drawEnhancedPlatform(platform);
+                }
+            }
+        }
+        
+        function drawGroundPlatform(platform) {
+            // Draw solid ground that extends to bottom of screen
+            const groundTop = platform.y;
+            const groundHeight = canvas.height - groundTop + camera.y + 200; // Extend well below visible area
+            
+            // Multiple dirt layers for depth
+            const dirtGradient = ctx.createLinearGradient(0, groundTop, 0, groundTop + groundHeight);
+            dirtGradient.addColorStop(0, '#8B4513'); // Brown dirt
+            dirtGradient.addColorStop(0.3, '#654321'); // Darker brown
+            dirtGradient.addColorStop(0.7, '#5D4037'); // Even darker
+            dirtGradient.addColorStop(1, '#3E2723'); // Very dark soil
+            
+            // Draw the solid ground
+            ctx.fillStyle = dirtGradient;
+            ctx.fillRect(0, groundTop + 8, canvas.width, groundHeight);
+            
+            // Grass surface layer on top
+            const grassGradient = ctx.createLinearGradient(0, groundTop, 0, groundTop + 8);
+            grassGradient.addColorStop(0, '#32CD32'); // Bright green
+            grassGradient.addColorStop(1, '#228B22'); // Forest green
+            
+            ctx.fillStyle = grassGradient;
+            ctx.fillRect(0, groundTop, canvas.width, 8);
+            
+            // Add grass blades across the entire width
+            ctx.strokeStyle = '#32CD32';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 8) {
+                const x = i;
+                const grassHeight = 3 + Math.sin(i * 0.1) * 2; // Varied grass height
+                
+                ctx.beginPath();
+                ctx.moveTo(x, groundTop);
+                ctx.lineTo(x + Math.sin(i * 0.05) * 2, groundTop - grassHeight);
+                ctx.stroke();
+            }
+            
+            // Add some small rocks and details in the dirt
+            ctx.fillStyle = '#696969';
+            for (let i = 0; i < 20; i++) {
+                const x = (i * 47) % canvas.width;
+                const y = groundTop + 15 + (i * 13) % 30;
+                const size = 2 + (i % 4);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawEnhancedPlatform(platform) {
+            const x = platform.x;
+            const y = platform.y;
+            const width = platform.width;
+            const height = platform.height;
+            
+            // Create material-based gradient
+            const gradient = createPlatformGradient(platform, x, y, width, height);
+            
+            // Draw main platform
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, width, height);
+            
+            // Add 3D effect
+            if (platform.type !== 'DANGEROUS') {
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillRect(x, y, width, 2);
+                
+                // Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(x, y + height - 2, width, 2);
+            }
+            
+            // Glow effect for special platforms
+            if (platform.glow) {
+                const glowIntensity = 0.5 + Math.sin(platform.glowPhase) * 0.3;
+                ctx.shadowColor = platform.color;
+                ctx.shadowBlur = 15 * glowIntensity;
+                ctx.strokeStyle = platform.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+                ctx.shadowBlur = 0;
+            }
+            
+            // Platform-specific details
+            drawPlatformDetails(platform);
+            
+            // Fragile platform cracks
+            if (platform.fragile && platform.fragileTimer > 0) {
+                const alpha = platform.fragileTimer / 45;
+                ctx.globalAlpha = 1 - alpha;
+                
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x + width * 0.3, y);
+                ctx.lineTo(x + width * 0.7, y + height);
+                ctx.moveTo(x + width * 0.6, y);
+                ctx.lineTo(x + width * 0.4, y + height);
+                ctx.stroke();
+                
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        function createPlatformGradient(platform, x, y, width, height) {
+            const gradient = ctx.createLinearGradient(x, y, x, y + height);
+            
+            // For normal platforms, use height-based colors
+            if (platform.type === 'NORMAL') {
+                const currentHeight = Math.max(0, Math.floor((canvas.height - 100 - y) / 75) * 2);
+                
+                if (currentHeight < 40) {
+                    // Forest level - brown wood
+                    gradient.addColorStop(0, '#A0522D');
+                    gradient.addColorStop(0.5, '#8B4513');
+                    gradient.addColorStop(1, '#654321');
+                } else if (currentHeight < 80) {
+                    // Mountain level - gray stone
+                    gradient.addColorStop(0, '#A9A9A9');
+                    gradient.addColorStop(0.5, '#696969');
+                    gradient.addColorStop(1, '#2F4F4F');
+                } else if (currentHeight < 120) {
+                    // Cloud level - white/light blue
+                    gradient.addColorStop(0, '#FFFFFF');
+                    gradient.addColorStop(0.5, '#F0F8FF');
+                    gradient.addColorStop(1, '#E6E6FA');
+                } else if (currentHeight < 160) {
+                    // Stratosphere level - light blue ice
+                    gradient.addColorStop(0, '#E0FFFF');
+                    gradient.addColorStop(0.5, '#B0E0E6');
+                    gradient.addColorStop(1, '#87CEEB');
+                } else {
+                    // Space level - dark purple/alien
+                    gradient.addColorStop(0, '#9370DB');
+                    gradient.addColorStop(0.5, '#4B0082');
+                    gradient.addColorStop(1, '#2E0854');
+                }
+            } else {
+                // For special platforms, use original material-based colors
+                switch (platform.material) {
+                    case 'wood':
+                        gradient.addColorStop(0, '#8FBC8F');
+                        gradient.addColorStop(0.5, '#6B8E23');
+                        gradient.addColorStop(1, '#556B2F');
+                        break;
+                    case 'crystal':
+                        gradient.addColorStop(0, '#E6F3FF');
+                        gradient.addColorStop(0.5, '#87CEEB');
+                        gradient.addColorStop(1, '#4169E1');
+                        break;
+                    case 'stone':
+                        gradient.addColorStop(0, '#F5DEB3');
+                        gradient.addColorStop(0.5, '#DEB887');
+                        gradient.addColorStop(1, '#D2691E');
+                        break;
+                    case 'gold':
+                        gradient.addColorStop(0, '#FFFACD');
+                        gradient.addColorStop(0.5, '#FFD700');
+                        gradient.addColorStop(1, '#FFA500');
+                        break;
+                    case 'energy':
+                        gradient.addColorStop(0, '#DDA0DD');
+                        gradient.addColorStop(0.5, '#DA70D6');
+                        gradient.addColorStop(1, '#BA55D3');
+                        break;
+                    case 'rubber':
+                        gradient.addColorStop(0, '#AFEEEE');
+                        gradient.addColorStop(0.5, '#00CED1');
+                        gradient.addColorStop(1, '#008B8B');
+                        break;
+                    default:
+                        gradient.addColorStop(0, platform.color);
+                        gradient.addColorStop(1, platform.color + '88');
+                }
+            }
+            
+            return gradient;
+        }
+        
+        function drawPlatformDetails(platform) {
+            const x = platform.x;
+            const y = platform.y;
+            const width = platform.width;
+            const height = platform.height;
+            
+            switch (platform.type) {
+                case 'MOVING':
+                    // Direction arrow
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    const arrowX = x + width/2;
+                    const arrowY = y + height/2;
+                    const direction = platform.moveDirection;
+                    
+                    ctx.beginPath();
+                    if (direction > 0) {
+                        ctx.moveTo(arrowX - 6, arrowY - 3);
+                        ctx.lineTo(arrowX + 6, arrowY);
+                        ctx.lineTo(arrowX - 6, arrowY + 3);
+                    } else {
+                        ctx.moveTo(arrowX + 6, arrowY - 3);
+                        ctx.lineTo(arrowX - 6, arrowY);
+                        ctx.lineTo(arrowX + 6, arrowY + 3);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                    
+                case 'BOOST':
+                    // Energy spiral
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    for (let i = 0; i < 20; i++) {
+                        const angle = i * 0.3 + platform.glowPhase;
+                        const radius = (i / 20) * 8;
+                        const px = x + width/2 + Math.cos(angle) * radius;
+                        const py = y + height/2 + Math.sin(angle) * radius;
+                        
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                    ctx.stroke();
+                    break;
+                    
+                case 'SUPER':
+                    // Crystal pattern
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 1;
+                    const centerX = x + width/2;
+                    const centerY = y + height/2;
+                    
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i * Math.PI * 2) / 6;
+                        ctx.beginPath();
+                        ctx.moveTo(centerX, centerY);
+                        ctx.lineTo(
+                            centerX + Math.cos(angle) * 8,
+                            centerY + Math.sin(angle) * 4
+                        );
+                        ctx.stroke();
+                    }
+                    break;
+            }
+        }
+        
+        function drawEnhancedPlayer() {
+            const centerX = player.x + player.width/2;
+            const centerY = player.y + player.height/2;
+            const radius = player.width/2;
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(player.squashScale.x, player.squashScale.y);
+            ctx.rotate(player.rotation);
+            
+            const currentSkin = BALL_SKINS[selectedSkin] || BALL_SKINS.default;
+            
+            // Glow effect for special skins
+            if (currentSkin.glow) {
+                ctx.shadowColor = currentSkin.glowColor || currentSkin.gradient[0];
+                ctx.shadowBlur = 15;
+            }
+            
+            // Create gradient
+            const gradient = ctx.createRadialGradient(-3, -3, 0, 0, 0, radius);
+            
+            if (currentSkin.special === 'rainbow') {
+                const time = Date.now() / 1000;
+                const hue1 = (time * 100) % 360;
+                const hue2 = (hue1 + 120) % 360;
+                const hue3 = (hue1 + 240) % 360;
+                
+                gradient.addColorStop(0, `hsl(${hue1}, 100%, 70%)`);
+                gradient.addColorStop(0.7, `hsl(${hue2}, 100%, 60%)`);
+                gradient.addColorStop(1, `hsl(${hue3}, 100%, 50%)`);
+            } else {
+                gradient.addColorStop(0, currentSkin.gradient[0]);
+                gradient.addColorStop(0.7, currentSkin.gradient[1]);
+                gradient.addColorStop(1, currentSkin.gradient[2]);
+            }
+            
+            ctx.fillStyle = gradient;
+            
+            // Draw ball
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+            
+            // Stroke
+            ctx.strokeStyle = currentSkin.stroke;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Highlight
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(-3, -3, radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add special effects for certain skins
+            if (currentSkin.special === 'fire') {
+                drawFireEffect();
+            } else if (currentSkin.special === 'ice') {
+                drawIceEffect();
+            } else if (currentSkin.special === 'galaxy') {
+                drawGalaxyEffect();
+            }
+            
+            // Add face to non-special balls
+            if (!currentSkin.special || currentSkin.special === 'neon') {
+                drawBallFace();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawFireEffect() {
+            const time = Date.now() / 100;
+            
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI * 2) / 6 + time;
+                const distance = 8 + Math.sin(time + i) * 3;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                ctx.fillStyle = `rgba(255, ${100 + Math.sin(time + i) * 50}, 0, ${0.3 + Math.sin(time + i) * 0.2})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawIceEffect() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI * 2) / 8;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+                ctx.stroke();
+            }
+        }
+        
+        function drawGalaxyEffect() {
+            const time = Date.now() / 200;
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            for (let i = 0; i < 30; i++) {
+                const angle = i * 0.4 + time;
+                const distance = (i / 30) * 8;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        
+        function drawBallFace() {
+            // Eyes
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.arc(-4, -2, 3, 0, Math.PI * 2);
+            ctx.arc(4, -2, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pupils
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(-3, -2, 1.5, 0, Math.PI * 2);
+            ctx.arc(3, -2, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Smile
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 2, 4, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+        }
+        
+        function drawParticles() {
+            if (!gameSettings.particles) return;
+            
+            // Draw ball trail particles
+            for (let particle of particles) {
+                ctx.globalAlpha = particle.life;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw landing particles
+            for (let particle of landingParticles) {
+                ctx.globalAlpha = particle.life;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawEnvironmentParticles() {
+            for (let particle of environmentParticles) {
+                ctx.save();
+                ctx.globalAlpha = particle.life;
+                ctx.translate(particle.x, particle.y);
+                
+                if (particle.rotation !== undefined) {
+                    ctx.rotate(particle.rotation);
+                }
+                
+                if (particle.type === 'leaf') {
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 3, 6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (particle.type === 'snow') {
+                    ctx.fillStyle = particle.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        // UI and game state management
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('height').textContent = Math.floor(highestReached);
+            document.getElementById('level').textContent = level;
+            document.getElementById('speed').textContent = worldSpeed.toFixed(1);
+        }
+        
+        function checkHeightMilestones(height) {
+            const milestones = [50, 100, 200, 300, 500, 750, 1000];
+            
+            for (let milestone of milestones) {
+                if (height >= milestone && !shownMilestones.has(milestone)) {
+                    showHeightMilestone(milestone);
+                    shownMilestones.add(milestone); // Mark as shown, only show once
+                }
+            }
+        }
+        
+        function showHeightMilestone(height) {
+            const milestone = document.createElement('div');
+            milestone.className = 'height-milestone';
+            milestone.textContent = `🏔️ ${height}m Reached!`;
+            milestone.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 1000;
+                pointer-events: none;
+                animation: milestone-popup 1s ease-in-out;
+            `;
+            
+            document.body.appendChild(milestone);
+            
+            // Remove after exactly 1 second
+            setTimeout(() => {
+                if (milestone.parentNode) {
+                    milestone.parentNode.removeChild(milestone);
+                }
+            }, 1000);
+        }
+        
+        function showLevelUp() {
+            showAchievementPopup(`🆙 Level ${level}!`);
+        }
+        
+        function showStreakEffect() {
+            if (player.currentStreak % 5 === 0 && player.currentStreak > 0) {
+                showAchievementPopup(`🔥 ${player.currentStreak} Streak!`);
+            }
+        }
+        
+        function showAchievementPopup(text) {
+            const popup = document.getElementById('achievementPopup');
+            document.getElementById('achievementText').textContent = text;
+            popup.classList.add('show');
+            
+            setTimeout(() => {
+                popup.classList.remove('show');
+            }, 2000);
+        }
+        
+        // Audio system (placeholder - would need actual audio files)
+        function playJumpSound() {
+            // Placeholder for jump sound
+            if (gameSettings.sound) {
+                // Could implement Web Audio API sounds here
+            }
+        }
+        
+        function playPlatformSound(platformType) {
+            // Placeholder for platform-specific sounds
+            if (gameSettings.sound) {
+                // Different sounds for different platform types
+            }
+        }
+        
+        // Statistics and achievements
+        function updateStats(statName, value) {
+            const stats = JSON.parse(localStorage.getItem('bounceballStats') || '{}');
+            stats[statName] = (stats[statName] || 0) + value;
+            localStorage.setItem('bounceballStats', JSON.stringify(stats));
+        }
+        
+        function checkAchievement(achievementId) {
+            const achievements = JSON.parse(localStorage.getItem('bounceballAchievements') || '{}');
+            
+            if (!achievements[achievementId]) {
+                achievements[achievementId] = true;
+                localStorage.setItem('bounceballAchievements', JSON.stringify(achievements));
+                
+                // Show achievement notification
+                showAchievementPopup(`🏆 Achievement Unlocked!`);
+                return true;
+            }
+            return false;
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            const currentTime = Date.now();
+            const deltaTime = currentTime - lastFrameTime;
+            fps = 1000 / deltaTime;
+            lastFrameTime = currentTime;
+            
+            updatePlayer();
+            updatePlatforms();
+            updateParticles();
+            updateCamera();
+            updateGameLogic();
+            render();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Game state functions
+        function saveHighScore(score, height) {
+            let highScores = JSON.parse(localStorage.getItem('bounceballHighScores') || '[]');
+            const survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
+            
+            highScores.push({
+                score: score,
+                height: height,
+                survivalTime: survivalTime,
+                streak: player.perfectLandings,
+                date: new Date().toISOString().split('T')[0]
+            });
+            
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, 10);
+            
+            localStorage.setItem('bounceballHighScores', JSON.stringify(highScores));
+            
+            // Update stats
+            const stats = JSON.parse(localStorage.getItem('bounceballStats') || '{}');
+            stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+            stats.bestHeight = Math.max(stats.bestHeight || 0, Math.floor(height));
+            stats.bestScore = Math.max(stats.bestScore || 0, score);
+            stats.longestStreak = Math.max(stats.longestStreak || 0, player.perfectLandings);
+            localStorage.setItem('bounceballStats', JSON.stringify(stats));
+            
+            return highScores[0].score === score;
+        }
+        
+        function gameOver() {
+            if (!gameRunning) return;
+            
+            gameRunning = false;
+            const survivalTime = Math.floor((Date.now() - gameStartTime) / 1000);
+            
+            // Save high score and check for new record
+            const isNewRecord = saveHighScore(score, highestReached);
+            
+            // Check achievements
+            let achievementEarned = false;
+            if (score >= 500) achievementEarned = checkAchievement('score-500') || achievementEarned;
+            if (score >= 1000) achievementEarned = checkAchievement('score-1000') || achievementEarned;
+            if (player.perfectLandings >= 10) achievementEarned = checkAchievement('perfect-10') || achievementEarned;
+            if (survivalTime >= 300) achievementEarned = checkAchievement('survivor') || achievementEarned;
+            
+            // Update game over display
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalHeight').textContent = Math.floor(highestReached);
+            document.getElementById('finalStreak').textContent = player.perfectLandings;
+            document.getElementById('survivalTime').textContent = survivalTime;
+            
+            if (isNewRecord) {
+                document.getElementById('newRecord').style.display = 'block';
+                if (gameSettings.vibration && navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200, 100, 200]);
+                }
+            }
+            
+            if (achievementEarned) {
+                document.getElementById('achievementEarned').style.display = 'block';
+            }
+            
+            document.getElementById('gameOver').style.display = 'block';
+            
+            // Clear input
+            Object.keys(keys).forEach(key => keys[key] = false);
+        }
+        
+        function restartGame() {
+            gameRunning = true;
+            gamePaused = false;
+            gameStartTime = Date.now();
+            score = 0;
+            level = 1;
+            jumpPowerIncrease = 0;
+            highestReached = 0;
+            worldSpeed = baseWorldSpeed;
+            camera.y = 0;
+            gameStarted = false;
+            particles = [];
+            landingParticles = [];
+            environmentParticles = [];
+            shownMilestones.clear(); // Reset milestone tracking
+            risingLavaY = canvas.height; // Reset lava position
+            
+            // Reset player
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 125; // Positioned safely above the ground platform
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.speed = 5;
+            player.onGround = false; // Let physics handle initial ground contact
+            player.lastJumpTime = 0;
+            player.lastGroundTime = 0;
+            player.lastJumpInput = 0;
+            player.boostEndTime = 0;
+            player.jumpBoostEndTime = 0;
+            player.boostJumpPower = 0;
+            player.originalSpeed = 5;
+            player.perfectLandings = 0;
+            player.currentStreak = 0;
+            player.rotation = 0;
+            player.squashScale = { x: 1, y: 1 };
+            
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('newRecord').style.display = 'none';
+            document.getElementById('achievementEarned').style.display = 'none';
+            
+            initializePlatforms();
+            gameLoop();
+        }
+        
+        // Navigation functions
+        function backToMenu() {
+            window.location.href = 'index.html';
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        function pauseGame() {
+            if (!gameRunning) return;
+            gamePaused = !gamePaused;
+        }
+        
+        // Loading system
+        function simulateLoading() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const progressBar = document.getElementById('loadingProgress');
+            let progress = 0;
+            
+            const loadingInterval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(loadingInterval);
+                    
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            startGame();
+                        }, 500);
+                    }, 500);
+                }
+                
+                progressBar.style.width = progress + '%';
+            }, 100);
+        }
+        
+        function startGame() {
+            initializePlatforms();
+            gameLoop();
+        }
+        
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Adjust canvas size for mobile
+            if (window.innerWidth < 768) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            simulateLoading();
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth < 768) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+    </script>
+</body>
+</html>
