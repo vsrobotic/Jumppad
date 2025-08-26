@@ -391,7 +391,6 @@
                 <p><strong>🎯 Final Score:</strong> <span id="finalScore">0</span></p>
                 <p><strong>📏 Max Height:</strong> <span id="finalHeight">0</span>m</p>
                 <p><strong>🏅 Best Streak:</strong> <span id="finalStreak">0</span></p>
-                <p><strong>⏱️ Survival Time:</strong> <span id="survivalTime">0</span>s</p>
             </div>
             <div id="newRecord" style="color: #FFD700; display: none; margin: 15px 0;">
                 🏆 NEW HIGH SCORE! 🏆
@@ -1334,8 +1333,7 @@
             // Generate new platforms
             generateNewPlatforms();
             
-            // Update streak display
-            document.getElementById('streak').textContent = player.currentStreak;
+            // Removed: streak display element no longer exists
         }
         
         // Enhanced background system with dynamic nature scenes - changes every 20 platforms (40 meters)
@@ -2406,8 +2404,7 @@
             // Update game over display
             document.getElementById('finalScore').textContent = score;
             document.getElementById('finalHeight').textContent = Math.floor(highestReached);
-            document.getElementById('finalStreak').textContent = player.perfectLandings;
-            document.getElementById('survivalTime').textContent = survivalTime;
+            // Removed: finalStreak and survivalTime elements no longer exist
             
             if (isNewRecord) {
                 document.getElementById('newRecord').style.display = 'block';
